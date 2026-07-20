@@ -1,0 +1,88 @@
+---
+title: "Getting started with leakaudit"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with leakaudit}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## The problem
+
+When building an image classification dataset, near-duplicate images (the
+same photo re-saved, resized, lightly cropped, or recompressed) commonly end
+up split across train and test. This silently inflates test-set performance,
+since the model has effectively already seen a near-identical copy of the
+"unseen" example.
+
+leakaudit finds these near-duplicates, reports how much they contaminate
+each split, and can produce a corrected split assignment.
+
+## Workflow
+
+The typical pipeline has four steps: hash, group, audit, and clean.
+
+```{r, eval = FALSE}
+library(leakaudit)
+
+# 1. Hash every image and record which split it currently belongs to
+hashes <- compute_hashes(
+  paths = image_paths,
+  split = split_labels
+)
+
+# 2. Cluster images into near-duplicate groups
+grouped <- find_duplicate_groups(hashes, threshold = 5)
+
+# 3. Audit: how much leakage is there?
+report <- dhash_audit(grouped)
+print(report)
+
+# 4. Clean: reassign leaked groups to a single split
+clean <- clean_splits(grouped, priority = c("train", "val", "test"))
+```
+
+## A minimal, reproducible example
+
+`dhash_audit()` and `clean_splits()` only need a data frame with `path`,
+`hash`/`group_id`, and `split` columns, so they can be demonstrated without
+real image files:
+
+```{r}
+library(leakaudit)
+
+groups <- data.frame(
+  path     = c("a.jpg", "b.jpg", "c.jpg", "d.jpg", "e.jpg"),
+  split    = c("train", "test", "train", "val", "test"),
+  group_id = c(1, 1, 2, 3, 3),
+  stringsAsFactors = FALSE
+)
+
+report <- dhash_audit(groups)
+report
+```
+
+Group 1 spans `train` and `test`, and group 3 spans `val` and `test`, so
+both are flagged as leaked. Group 2 stays within `train` and is left alone.
+
+`clean_splits()` resolves the leaked groups by reassigning every member to
+a single split, chosen by priority (default: keep duplicates in `train`):
+
+```{r}
+clean_splits(groups)
+```
+
+## Choosing a threshold
+
+`find_duplicate_groups()` clusters images whose dHash values are within
+`threshold` Hamming distance (out of 64 bits). The default of `5` is a
+reasonably conservative value: lower it for stricter, closer-to-exact
+matching, or raise it to catch more aggressive near-duplicates at the cost
+of more false positives.
