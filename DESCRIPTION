@@ -17,7 +17,6 @@ Description: Detects near-duplicate images across dataset splits using
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
 Imports:
     magick
 Suggests:
@@ -30,3 +29,4 @@ BugReports: https://github.com/anakincodex/leakaudit/issues
 Depends:
     R (>= 4.1)
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0

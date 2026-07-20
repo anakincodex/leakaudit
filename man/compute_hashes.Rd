@@ -8,7 +8,7 @@ compute_hashes(paths, split = NULL)
 }
 \arguments{
 \item{paths}{Character vector of file paths to image files. Any format
-readable by \code{\link[magick:editing]{magick::image_read()}} is supported (jpg, png, tif, ...).}
+readable by \code{\link[magick:image_read]{magick::image_read()}} is supported (jpg, png, tif, ...).}
 
 \item{split}{A character vector the same length as \code{paths} giving the
 split each image currently belongs to (e.g. \code{"train"}, \code{"val"},
